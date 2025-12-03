@@ -37,6 +37,7 @@ dependencies:
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.1.2
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +65,7 @@ flutter:
   assets:
     - assets/images/google.png
     - assets/images/Gs.png
+    - assets/images/facebook.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

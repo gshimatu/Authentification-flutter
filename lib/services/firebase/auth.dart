@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -55,6 +56,43 @@ class Auth {
       return await _firebaseAuth.signInWithCredential(credential);
     } on Exception catch (e) {
       print('exceprion-> $e');
+      return null;
+    }
+  }
+
+  // Login avec Facebook
+  Future<UserCredential?> signInWithFacebook() async {
+    try {
+      // 1. Déclencher la connexion via le SDK Facebook
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['public_profile', 'email'],
+      );
+
+      // 2. Vérifier si l'utilisateur a validé la connexion
+      if (result.status == LoginStatus.success) {
+        // 3. Récupérer le token d'accès
+        final AccessToken accessToken = result.accessToken!;
+
+        // 4. Créer les identifiants pour Firebase
+        final OAuthCredential credential = FacebookAuthProvider.credential(
+          accessToken.tokenString,
+        );
+
+        // 5. Connecter à Firebase
+        return await _firebaseAuth.signInWithCredential(credential);
+      } else {
+        // L'utilisateur a annulé ou erreur SDK Facebook
+        print('Facebook login status: ${result.status}');
+        print('Message: ${result.message}');
+        return null;
+      }
+    } on FirebaseAuthException catch (e) {
+      // Erreurs liées à Firebase (ex: compte existe déjà avec un autre provider)
+      print('FirebaseAuthException: ${e.message}');
+      rethrow; 
+    } catch (e) {
+      // Erreurs générales
+      print('Exception during Facebook Login: $e');
       return null;
     }
   }
