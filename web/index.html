@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -27,14 +28,42 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
-  <meta name="google-signin-client_id" content="258582651622-lf7dvapvv32q5re1llpubuq4fin30e5l.apps.googleusercontent.com">
+  <!-- Configuration pour Google Sign-In -->
+  <meta name="google-signin-client_id"
+    content="258582651622-lf7dvapvv32q5re1llpubuq4fin30e5l.apps.googleusercontent.com">
 
   <title>authentification</title>
   <link rel="manifest" href="manifest.json">
+
 </head>
+
 <body>
+  <!-- Facebook SDK : Placer le SDK juste après la balise <body> pour un chargement asynchrone fiable -->
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '818035817790431',
+        cookie     : true,                     
+        xfbml      : true,                     
+        version    : 'v18.0'                  
+      });
+      
+      // OPTIONNEL : Enregistrement de l'événement de vue de page, peut être fait ici
+      FB.AppEvents.logPageView(); 
+    };
+
+    (function(d, s, id){
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) {return;}
+       js = d.createElement(s); js.id = id;
+       js.src = "https://connect.facebook.net/en_US/sdk.js";
+       fjs.parentNode.insertBefore(js, fjs);
+     }(document, 'script', 'facebook-jssdk'));
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

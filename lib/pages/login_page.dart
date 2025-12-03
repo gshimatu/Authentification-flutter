@@ -20,16 +20,58 @@ class _MyHomePageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _forLogin = true;
 
+  // Fonction utilitaire pour afficher les erreurs
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red,
+        showCloseIcon: true,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
 
+    // Fonction pour gérer la connexion sociale et les erreurs
+    // Elle prend en paramètre la méthode d'authentification (Google ou Facebook)
+    Future<void> _handleSocialLogin(Future<UserCredential?> Function() loginMethod) async {
+      setState(() {
+        _isLoading = true;
+      });
+      try {
+        final userCredential = await loginMethod();
+        if (userCredential == null) {
+          // L'utilisateur a annulé la connexion sociale ou erreur non critique
+          _showErrorSnackbar("Connexion annulée ou interrompue.");
+        } else {
+          // L'utilisateur est connecté, navigation vers l'écran principal...
+          // Ici, l'état de l'application sera mis à jour via le Stream<User?> de Firebase
+          print("Utilisateur connecté via social: ${userCredential.user?.uid}");
+        }
+      } on FirebaseAuthException catch (e) {
+        // Gérer les erreurs de Firebase (ex: compte existant avec autre provider)
+        _showErrorSnackbar('Erreur Firebase: ${e.message}');
+      } catch (e) {
+        // Gérer les autres erreurs (ex: connexion réseau)
+        _showErrorSnackbar("Une erreur inattendue est survenue.");
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+
+
     return Scaffold(
       // On utilise un Stack pour mettre une décoration en arrière-plan
       body: Stack(
         children: [
-          // DÉCORATION D'ARRIÈRE-PLAN
+          // DÉCORATION D'ARRIÈRE-PLAN (Gris clair)
           Container(
             height: double.infinity,
             width: double.infinity,
@@ -85,14 +127,7 @@ class _MyHomePageState extends State<LoginPage> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
-                              // Logo et Titre centrés
-                              Center(
-                                child: Image.asset(
-                                  'assets/images/Gs.png',
-                                  height: 56, 
-                                ),
-                              ),
-                              const SizedBox(height: 24),
+                              // Titre
                               Text(
                                 _forLogin ? "Bon retour !" : "Rejoignez-nous",
                                 textAlign: TextAlign.center,
@@ -167,7 +202,7 @@ class _MyHomePageState extends State<LoginPage> {
 
                               const SizedBox(height: 32),
 
-                              // Primary action Button
+                              // Primary action Button (Login/Sign Up)
                               SizedBox(
                                 height: 56, // Bouton plus haut
                                 child: ElevatedButton(
@@ -187,12 +222,10 @@ class _MyHomePageState extends State<LoginPage> {
                                       _isLoading
                                           ? null
                                           : () async {
-                                            if (_formKey.currentState!
-                                                .validate()) {
+                                            if (_formKey.currentState!.validate()) {
                                               setState(() {
                                                 _isLoading = true;
                                               });
-                                              // Login Logic preserved
                                               try {
                                                 if (_forLogin) {
                                                   await Auth()
@@ -209,26 +242,12 @@ class _MyHomePageState extends State<LoginPage> {
                                                             .text,
                                                       );
                                                 }
-                                                setState(() {
-                                                  _isLoading = false;
-                                                });
                                               } on FirebaseAuthException catch (e) {
+                                                _showErrorSnackbar('${e.message}');
+                                              } finally {
                                                 setState(() {
                                                   _isLoading = false;
                                                 });
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      '${e.message}',
-                                                    ),
-                                                    behavior:
-                                                        SnackBarBehavior.floating,
-                                                    backgroundColor: Colors.red,
-                                                    showCloseIcon: true,
-                                                  ),
-                                                );
                                               }
                                             }
                                           },
@@ -328,42 +347,91 @@ class _MyHomePageState extends State<LoginPage> {
 
                               const SizedBox(height: 24),
 
-                              // Google Button
-                              SizedBox(
-                                height: 56,
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    side: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                    backgroundColor: Colors.white,
-                                    elevation: 0,
-                                  ),
-                                  onPressed: () {
-                                    Auth().signInWithGoogle();
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset(
-                                        'assets/images/google.png',
-                                        height: 24,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Text(
-                                        'Continuer avec Google',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.black87,
-                                          fontWeight: FontWeight.w500,
+                              // BOUTONS SOCIAUX (Google & Facebook)
+                              Row(
+                                children: [
+                                  // Google Button
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 56,
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          side: BorderSide(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                          backgroundColor: Colors.white,
+                                          elevation: 0,
+                                        ),
+                                        onPressed:() {
+                                          Auth().signInWithGoogle();
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Image.asset(
+                                              'assets/images/google.png',
+                                              height: 24,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Google',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                  
+                                  const SizedBox(width: 16),
+
+                                  // Facebook Button (AJOUTÉ)
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 56,
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          side: BorderSide(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                          backgroundColor: Colors.white,
+                                          elevation: 0,
+                                        ),
+                                        // Appel de la méthode Facebook
+                                        onPressed: _isLoading ? null : () => _handleSocialLogin(Auth().signInWithFacebook),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Image.asset(
+                                              // Votre image facebook.png
+                                              'assets/images/facebook.png',
+                                              height: 24,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Facebook',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
